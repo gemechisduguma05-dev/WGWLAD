@@ -1,111 +1,98 @@
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
+// ===================================
+// WGWLAD - AUTHENTICATION SYSTEM
+// ===================================
 
-body {
-    min-height: 100vh;
-    background: #f0f5fb;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
+// 1. SUPABASE CONFIGURATION
+const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-.header {
-    text-align: center;
-    margin-bottom: 25px;
-    color: #155a9c;
-}
+const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
 
-.header h1 {
-    font-size: 38px;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
+// 2. LOGIN ELEMENTS
+const loginForm = document.getElementById("loginForm");
+const message = document.getElementById("message");
+const loginButton = document.getElementById("loginButton");
 
-.header p {
-    margin-top: 6px;
-    font-size: 14px;
-}
+// 3. LOGIN FUNCTION
+loginForm.addEventListener("submit", async function(event) {
+    event.preventDefault();
 
-.login-container {
-    width: 100%;
-    max-width: 420px;
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.08);
-}
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
-.login-container h2 {
-    text-align: center;
-    color: #155a9c;
-    margin-bottom: 10px;
-}
+    loginButton.disabled = true;
+    loginButton.textContent = "PLEASE WAIT...";
+    message.textContent = "";
 
-.login-container > p {
-    text-align: center;
-    color: #777;
-    margin-bottom: 25px;
-}
+    try {
+        // Authenticate with Supabase
+        const { data, error } = await db.auth.signInWithPassword({
+            email,
+            password
+        });
 
-form label {
-    display: block;
-    margin: 15px 0 7px;
-    color: #333;
-    font-weight: bold;
-}
+        if (error) throw error;
 
-form input {
-    width: 100%;
-    padding: 13px;
-    border: 1px solid #d5dfea;
-    border-radius: 8px;
-    font-size: 15px;
-}
+        // Get user profile
+        const { data: profile, error: profileError } = await db
+            .from("user_profiles")
+            .select("full_name, username, role, is_active")
+            .eq("user_id", data.user.id)
+            .single();
 
-form input:focus {
-    outline: 2px solid #2878bd;
-}
+        if (profileError || !profile) {
+            await db.auth.signOut();
+            throw new Error("User profile not found.");
+        }
 
-form button {
-    width: 100%;
-    margin-top: 22px;
-    padding: 14px;
-    background: #1769aa;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-}
+        if (!profile.is_active) {
+            await db.auth.signOut();
+            throw new Error("Your account is inactive.");
+        }
 
-form button:hover {
-    background: #104f83;
-}
+        // Save display information only
+        sessionStorage.setItem(
+            "wgwl_user_name",
+            profile.full_name
+        );
 
-#message {
-    margin-top: 12px;
-    text-align: center;
-}
+        // Redirect according to role
+        window.location.href = "dashboard.html";
 
-#forgotPassword {
-    display: block;
-    text-align: center;
-    margin-top: 20px;
-    color: #1769aa;
-    text-decoration: none;
-}
+    } catch (error) {
+        message.textContent = error.message;
+        loginButton.disabled = false;
+        loginButton.textContent = "LOGIN";
+    }
+});
 
-footer {
-    margin-top: 25px;
-    color: #777;
-    font-size: 12px;
-    text-align: center;
-}
+// 4. FORGOT PASSWORD
+document.getElementById("forgotPassword")
+.addEventListener("click", async function(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+
+    if (!email) {
+        message.textContent = "Please enter your email first.";
+        return;
+    }
+
+    try {
+        const { error } = await db.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + "/reset-password.html"
+        });
+
+        if (error) throw error;
+
+        message.textContent =
+            "Password reset instructions sent to your email.";
+
+    } catch (error) {
+        message.textContent = error.message;
+    }
+});
