@@ -1,35 +1,23 @@
 
-// ===================================
-// WGWLAD - AUTHENTICATION SYSTEM
-// ===================================
+// WGWLAD LOGIN SYSTEM
 
-// 1. SUPABASE CONFIGURATION
-const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const db = window.db;
 
-const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
-
-// 2. LOGIN ELEMENTS
 const loginForm = document.getElementById("loginForm");
 const message = document.getElementById("message");
 const loginButton = document.getElementById("loginButton");
 
-// 3. LOGIN FUNCTION
-loginForm.addEventListener("submit", async function(event) {
+loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
 
     loginButton.disabled = true;
     loginButton.textContent = "PLEASE WAIT...";
     message.textContent = "";
 
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
     try {
-        // Authenticate with Supabase
         const { data, error } = await db.auth.signInWithPassword({
             email,
             password
@@ -37,7 +25,6 @@ loginForm.addEventListener("submit", async function(event) {
 
         if (error) throw error;
 
-        // Get user profile
         const { data: profile, error: profileError } = await db
             .from("user_profiles")
             .select("full_name, username, role, is_active")
@@ -54,25 +41,20 @@ loginForm.addEventListener("submit", async function(event) {
             throw new Error("Your account is inactive.");
         }
 
-        // Save display information only
-        sessionStorage.setItem(
-            "wgwl_user_name",
-            profile.full_name
-        );
-
-        // Redirect according to role
         window.location.href = "dashboard.html";
 
     } catch (error) {
         message.textContent = error.message;
+        message.style.color = "red";
+    } finally {
         loginButton.disabled = false;
         loginButton.textContent = "LOGIN";
     }
 });
 
-// 4. FORGOT PASSWORD
+// FORGOT PASSWORD
 document.getElementById("forgotPassword")
-.addEventListener("click", async function(event) {
+.addEventListener("click", async (event) => {
     event.preventDefault();
 
     const email = document.getElementById("email").value.trim();
@@ -91,8 +73,10 @@ document.getElementById("forgotPassword")
 
         message.textContent =
             "Password reset instructions sent to your email.";
+        message.style.color = "green";
 
     } catch (error) {
         message.textContent = error.message;
+        message.style.color = "red";
     }
 });
