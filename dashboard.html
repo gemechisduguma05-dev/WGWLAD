@@ -2,186 +2,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WGWLAD | Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .dashboard {
-            width: 100%;
-            max-width: 1100px;
-            margin: 20px auto;
-            padding: 20px;
-        }
-
-        .topbar {
-            background: #1769aa;
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .topbar button {
-            background: white;
-            color: #1769aa;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 7px;
-            font-weight: bold;
-        }
-
-        .welcome {
-            margin: 25px 0;
-            color: #155a9c;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-            border-left: 5px solid #1769aa;
-        }
-
-        .card h3 {
-            color: #1769aa;
-            margin-bottom: 12px;
-        }
-
-        .card p {
-            color: #666;
-        }
-
-        .card a {
-            display: inline-block;
-            margin-top: 15px;
-            color: #1769aa;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        #dashboardMessage {
-            text-align: center;
-            margin-top: 20px;
-            color: #555;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WGWLAD Dashboard</title>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-    <main class="dashboard">
+<main class="dashboard">
+    <header class="topbar">
+        <div>
+            <h2>WGWLAD</h2>
+            <p>Church Management System</p>
+        </div>
+        <button id="logoutButton">LOGOUT</button>
+    </header>
 
-        <header class="topbar">
-            <div>
-                <h2>WGWLAD</h2>
-                <p>Member Management System</p>
-            </div>
+    <section class="welcome">
+        <h2>Welcome, <span id="userName">User</span></h2>
+        <p id="userRole"></p>
+    </section>
 
-            <button id="logoutButton">LOGOUT</button>
-        </header>
+    <section class="cards">
+        <div class="card">
+            <h3>Members</h3>
+            <p>Register and manage church members.</p>
+            <a href="members.html">Open Members →</a>
+        </div>
 
-        <section class="welcome">
-            <h2>Welcome, <span id="userName">User</span></h2>
-            <p>Church Management Dashboard</p>
-            <p id="userRole"></p>
-        </section>
+        <div class="card">
+            <h3>Families</h3>
+            <p>Manage family records.</p>
+            <a href="families.html">Open Families →</a>
+        </div>
 
-        <section class="cards">
+        <div class="card">
+            <h3>Users</h3>
+            <p>Manage system users.</p>
+            <a href="users.html">Manage Users →</a>
+        </div>
+    </section>
 
-            <div class="card">
-                <h3>👥 Members</h3>
-                <p>Register and manage church members.</p>
-                <a href="members.html">Open Members →</a>
-            </div>
+    <p id="dashboardMessage"></p>
+</main>
 
-            <div class="card">
-                <h3>🏠 Families</h3>
-                <p>Manage family registration and information.</p>
-                <a href="families.html">Open Families →</a>
-            </div>
-
-            <div class="card">
-                <h3>👤 Users</h3>
-                <p>Manage system users and their roles.</p>
-                <a href="users.html">Manage Users →</a>
-            </div>
-
-            <div class="card">
-                <h3>⚙️ Settings</h3>
-                <p>System settings and account information.</p>
-                <a href="settings.html">Open Settings →</a>
-            </div>
-
-        </section>
-
-        <p id="dashboardMessage"></p>
-
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
-
-    <script>
-    async function loadDashboard() {
-        const message = document.getElementById("dashboardMessage");
-
-        try {
-            const { data: { user }, error } = await db.auth.getUser();
-
-            if (error || !user) {
-                window.location.replace("index.html");
-                return;
-            }
-
-            const { data: profile, error: profileError } = await db
-                .from("user_profiles")
-                .select("full_name, role, is_active")
-                .eq("user_id", user.id)
-                .single();
-
-            if (profileError || !profile || !profile.is_active) {
-                await db.auth.signOut();
-                window.location.replace("index.html");
-                return;
-            }
-
-            document.getElementById("userName").textContent =
-                profile.full_name;
-
-            document.getElementById("userRole").textContent =
-                "Role: " + profile.role.replace("_", " ").toUpperCase();
-
-        } catch (error) {
-            message.textContent = error.message;
-        }
-    }
-
-    document.getElementById("logoutButton")
-        .addEventListener("click", async function() {
-            const { error } = await db.auth.signOut();
-
-            if (!error) {
-                window.location.replace("index.html");
-            } else {
-                document.getElementById("dashboardMessage").textContent =
-                    error.message;
-            }
-        });
-
-    loadDashboard();
-    </script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="dashboard.js"></script>
 </body>
 </html>
